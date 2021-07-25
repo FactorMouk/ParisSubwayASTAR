@@ -1,6 +1,7 @@
 .App {
   text-align: center;
   background-color: #061217;
+  color: white;
   height: 100vh;
   header {
     padding: 40px 40px 0px 40px;
@@ -8,11 +9,34 @@
     align-items: center;
     justify-content: center;
     > h1 {
-      color: white;
       font-size: 60px;
     }
   }
   main {
     margin: 0px 60px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    .side-control {
+      .stations-selected {
+        > h2 {
+          font-size: 30px;
+        }
+        > span {
+          font-size: 60px;
+        }
+        > .no-station-text {
+          color: grey;
+        }
+      }
+      .find-way-button {
+        height: 50px;
+        font-size: 30px;
+        margin: 30px;
+        cursor: pointer;
+      }
+      .find-way-button:disabled {
+        cursor: default;
+      }
+    }
   }
 }
