@@ -10,9 +10,11 @@ class App extends React.Component {
     super(props);
     this.state = {
       canvas: null,
+      graph: null,
       stationsCanvasVar: [],
       selectingStartOrEnd: 0,
       readyToFindWay: false,
+      finishRoute: true,
       commandMessage: "",
       startStation: null,
       startLine: null,
@@ -385,10 +387,27 @@ class App extends React.Component {
   }
 
   findBetterWay() {
+    this.resetCanvas();
+    this.setState({ finishRoute: false });
     let cy = this.buildGraph();
+    this.setState({ graph: cy });
     this.aStar(null, this.state.startStation, this.state.startLine, cy, 0);
     this.state.stationsCanvasVar[this.state.startStation].set("fill", "red");
     this.state.canvas.renderAll();
+  }
+
+  resetCanvas() {
+    for (let i = 0; i < this.state.stationsCanvasVar.length; i++) {
+      this.state.stationsCanvasVar[i].set("fill", "white");
+    }
+    this.state.canvas.renderAll();
+    if (this.state.graph) {
+      let element = document.getElementById("better-way-graph");
+      element.style.height = 130 + "px";
+      this.state.graph.resize();
+      this.state.graph.fit();
+      this.state.graph.center();
+    }
   }
 
   addNodesToGraph(
@@ -466,11 +485,6 @@ class App extends React.Component {
       timeToTravelHeuristic += 4;
     }
 
-    console.log(
-      this.state.stationsLines[this.state.endStation].filter(
-        (n) => n !== newStationLine
-      ).length
-    );
     timeToTravelHeuristic +=
       this.state.stationsLines[this.state.endStation].filter(
         (n) => n !== newStationLine
@@ -490,8 +504,6 @@ class App extends React.Component {
   }
 
   aStar(previousStation, currentStation, currentLine, cy, currentRow) {
-    console.log(previousStation, currentStation, currentLine, cy, currentRow);
-
     let heuristicDistances = [];
     this.state.realDistances[currentStation].forEach((realDis, index) => {
       if (realDis === null || realDis === 0) {
@@ -505,9 +517,6 @@ class App extends React.Component {
         });
       }
     });
-
-    console.log(heuristicDistances);
-
     this.addNodesToGraph(
       heuristicDistances,
       previousStation,
@@ -524,7 +533,6 @@ class App extends React.Component {
     for (let i = 0; i < auxHeuristicDistances.length; i++) {
       if (auxHeuristicDistances[i] !== null) {
         if (this.state.endStation === i) {
-          console.log("aqui", i);
           indexMinStation = i;
           break;
         } else {
@@ -535,7 +543,6 @@ class App extends React.Component {
               (distance) => distance === auxHeuristicDistances[i][0]
             )
           ) {
-            console.log("oi");
             indexMinLine =
               this.state.stationsLines[i].indexOf(currentLine) !== -1
                 ? this.state.stationsLines[i].indexOf(currentLine)
@@ -556,9 +563,8 @@ class App extends React.Component {
       }
     }
 
-    console.log(indexMinStation, indexLineMinStation);
     this.setState({
-      commandMessage: `Vá para a estação E${indexMinStation + 1}`,
+      commandMessage: `Vá para a estação E${indexMinStation + 1} `,
     });
 
     this.state.stationsCanvasVar[indexMinStation].set("fill", "red");
@@ -573,8 +579,12 @@ class App extends React.Component {
           cy,
           currentRow + 1
         );
+      } else {
+        this.setState({
+          finishRoute: true,
+        });
       }
-    }, 3000);
+    }, 2000);
   }
 
   buildGraph() {
@@ -848,6 +858,7 @@ class App extends React.Component {
                 {this.state.startStation !== null && (
                   <select
                     name="startLine"
+                    disabled={this.state.finishRoute === false}
                     onChange={(e) => {
                       this.setState({ startLine: e.target.value });
                     }}
@@ -883,6 +894,7 @@ class App extends React.Component {
                 {this.state.endStation !== null && (
                   <select
                     name="endLine"
+                    disabled={this.state.finishRoute === false}
                     onChange={(e) => {
                       this.setState({ endLine: e.target.value });
                     }}
@@ -908,7 +920,10 @@ class App extends React.Component {
             </div>
             <button
               className="find-way-button"
-              disabled={this.state.readyToFindWay === false}
+              disabled={
+                this.state.readyToFindWay === false ||
+                this.state.finishRoute === false
+              }
               onClick={() => this.findBetterWay()}
             >
               Encontrar melhor caminho!
