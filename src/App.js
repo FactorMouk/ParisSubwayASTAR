@@ -1,6 +1,9 @@
 import React from "react";
 import { fabric } from "fabric";
+import cytoscape from "cytoscape";
+import cydagre from "cytoscape-dagre";
 import "./App.scss";
+cydagre(cytoscape);
 
 class App extends React.Component {
   constructor(props) {
@@ -9,7 +12,309 @@ class App extends React.Component {
       selectingStartOrEnd: 0,
       readyToFindWay: false,
       startStation: null,
+      startLine: null,
       endStation: null,
+      endLine: null,
+      directDistances: [
+        [
+          0, 10, 18.5, 24.8, 36.4, 38.8, 35.8, 25.4, 17.6, 9.1, 16.7, 27.3,
+          27.6, 29.8,
+        ],
+        [
+          10, 0, 8.5, 14.8, 26.6, 29.1, 26.1, 17.3, 10, 3.5, 15.5, 20.9, 19.1,
+          21.8,
+        ],
+        [
+          18.5, 8.5, 0, 6.3, 18.2, 20.6, 17.6, 13.6, 9.4, 10.3, 19.5, 19.1,
+          12.1, 16.6,
+        ],
+        [
+          24.8, 14.8, 6.3, 0, 12, 14.4, 11.5, 12.4, 12.6, 16.7, 23.6, 18.6,
+          10.6, 15.4,
+        ],
+        [
+          36.4, 26.6, 18.2, 12, 0, 3, 2.4, 19.4, 23.3, 28.2, 34.2, 24.8, 14.5,
+          17.9,
+        ],
+        [
+          38.8, 29.1, 20.6, 14.4, 3, 0, 3.3, 22.3, 25.7, 30.3, 36.7, 27.6, 15.2,
+          18.2,
+        ],
+        [
+          35.8, 26.1, 17.6, 11.5, 2.4, 3.3, 0, 20, 23, 27.3, 34.2, 25.7, 12.4,
+          15.6,
+        ],
+        [
+          25.4, 17.3, 13.6, 12.4, 19.4, 22.3, 20, 0, 8.2, 20.3, 16.1, 6.4, 22.7,
+          27.6,
+        ],
+        [
+          17.6, 10, 9.4, 12.6, 23.3, 25.7, 23, 8.2, 0, 13.5, 11.2, 10.9, 21.2,
+          26.6,
+        ],
+        [
+          9.1, 3.5, 10.3, 16.7, 28.2, 30.3, 27.3, 20.3, 13.5, 0, 17.6, 24.2,
+          18.7, 21.2,
+        ],
+        [
+          16.7, 15.5, 19.5, 23.6, 34.2, 36.7, 34.2, 16.1, 11.2, 17.6, 0, 14.2,
+          31.5, 35.5,
+        ],
+        [
+          27.3, 20.9, 19.1, 18.6, 24.8, 27.6, 25.7, 6.4, 10.9, 24.2, 14.2, 0,
+          28.8, 33.6,
+        ],
+        [
+          27.6, 19.1, 12.1, 10.6, 14.5, 15.2, 12.4, 22.7, 21.2, 18.7, 31.5,
+          28.8, 0, 5.1,
+        ],
+        [
+          29.8, 21.8, 16.6, 15.4, 17.9, 18.2, 15.6, 27.6, 26.6, 21.2, 35.5,
+          33.6, 5.1, 0,
+        ],
+      ],
+      realDistances: [
+        [
+          0,
+          10,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+        ],
+        [
+          10,
+          0,
+          8.5,
+          null,
+          null,
+          null,
+          null,
+          null,
+          10,
+          3.5,
+          null,
+          null,
+          null,
+          null,
+        ],
+        [
+          null,
+          8.5,
+          0,
+          6.3,
+          null,
+          null,
+          null,
+          null,
+          9.4,
+          null,
+          null,
+          null,
+          18.7,
+          null,
+        ],
+        [
+          null,
+          null,
+          6.3,
+          0,
+          13,
+          null,
+          null,
+          15.3,
+          null,
+          null,
+          null,
+          null,
+          12.8,
+          null,
+        ],
+        [
+          null,
+          null,
+          null,
+          13,
+          0,
+          3,
+          2.4,
+          30,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          3,
+          0,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          2.4,
+          null,
+          0,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+        ],
+        [
+          null,
+          null,
+          null,
+          15.3,
+          30,
+          null,
+          null,
+          0,
+          9.6,
+          null,
+          null,
+          6.4,
+          null,
+          null,
+        ],
+        [
+          null,
+          10,
+          9.4,
+          null,
+          null,
+          null,
+          null,
+          9.6,
+          0,
+          null,
+          12.2,
+          null,
+          null,
+          null,
+        ],
+        [
+          null,
+          3.5,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          0,
+          null,
+          null,
+          null,
+          null,
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          12.2,
+          null,
+          0,
+          null,
+          null,
+          null,
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          6.4,
+          null,
+          null,
+          null,
+          0,
+          null,
+          null,
+        ],
+        [
+          null,
+          null,
+          18.7,
+          12.8,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          0,
+          5.1,
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          5.1,
+          0,
+        ],
+      ],
+      stationsLines: [
+        ["blue"],
+        ["blue", "yellow"],
+        ["blue", "red"],
+        ["blue", "green"],
+        ["blue", "yellow"],
+        ["blue"],
+        ["yellow"],
+        ["yellow", "green"],
+        ["yellow", "red"],
+        ["yellow"],
+        ["red"],
+        ["green"],
+        ["green", "red"],
+        ["green"],
+      ],
     };
   }
 
@@ -71,6 +376,145 @@ class App extends React.Component {
     }
   }
 
+  findBetterWay() {
+    let cy = this.buildGraph(this.state.startStation);
+    this.aStar(null, this.state.startStation, cy, 0);
+  }
+
+  addNodesToGraph(
+    heuristicDistances,
+    previousStation,
+    currentStation,
+    currentRow,
+    cy
+  ) {
+    heuristicDistances.forEach((heuristicDistance, index) => {
+      if (index !== previousStation && heuristicDistance !== null) {
+        cy.add([
+          {
+            group: "nodes",
+            data: {
+              id: "E" + (index + 1) + "row" + (currentRow + 1),
+              station: "E" + (index + 1),
+            },
+          },
+          {
+            group: "edges",
+            data: {
+              id:
+                "E" +
+                (currentStation + 1) +
+                "e" +
+                index +
+                "row" +
+                (currentRow + 1),
+              source: "E" + (currentStation + 1) + "row" + currentRow,
+              target: "E" + (index + 1) + "row" + (currentRow + 1),
+            },
+          },
+        ]);
+      }
+    });
+    cy.elements().layout({ name: "dagre" }).run();
+    let element = document.getElementById("better-way-graph");
+    let currentHeight = element.offsetHeight;
+    element.style.height = currentHeight + 130 + "px";
+    cy.resize();
+    cy.fit();
+    cy.center();
+  }
+
+  aStar(previousStation, currentStation, cy, currentRow) {
+    let heuristicDistances = [];
+    this.state.realDistances[currentStation].forEach((realDis, index) => {
+      if (realDis === null || realDis === 0) {
+        heuristicDistances.push(null);
+      } else {
+        heuristicDistances.push(
+          this.state.realDistances[index][currentStation] +
+            this.state.directDistances[index][this.state.endStation]
+        );
+      }
+    });
+
+    this.addNodesToGraph(
+      heuristicDistances,
+      previousStation,
+      currentStation,
+      currentRow,
+      cy
+    );
+
+    let auxHeuristicDistances = [...heuristicDistances];
+    let indexMinStation = null;
+    while (!indexMinStation) {
+      let auxMinValue = Math.min(
+        ...auxHeuristicDistances.filter((element) => element !== null)
+      );
+      let auxIndexMinStation = auxHeuristicDistances.indexOf(auxMinValue);
+      if (
+        auxIndexMinStation === this.state.endStation ||
+        this.state.realDistances[auxIndexMinStation].filter(
+          (element) => element !== null
+        ).length > 2
+      ) {
+        indexMinStation = auxIndexMinStation;
+      } else {
+        auxHeuristicDistances.splice(auxIndexMinStation, 1);
+      }
+    }
+    if (indexMinStation !== this.state.endStation) {
+      this.aStar(currentStation, indexMinStation, cy, currentRow + 1);
+    }
+  }
+
+  buildGraph(startStation) {
+    let element = document.getElementById("better-way-graph");
+    let cy = cytoscape({
+      zoomingEnabled: false,
+      zoom: 1,
+      elements: {
+        nodes: [],
+        edges: [],
+      },
+      container: element,
+      style: [
+        {
+          selector: "node",
+          css: {
+            width: 50,
+            height: 50,
+            "background-color": "#61bffc",
+            content: "data(station)",
+            color: "white",
+          },
+        },
+      ],
+      layout: {
+        name: "dagre",
+      },
+    });
+    cy.center();
+    cy.elements().layout({ name: "dagre" }).run();
+    cy.add([
+      {
+        group: "nodes",
+        data: {
+          id: "E" + (startStation + 1) + "row" + 0,
+          station: "E" + (startStation + 1),
+        },
+      },
+    ]);
+    cy.resize();
+    cy.fit();
+    return cy;
+    // var x = 1;
+    // cy.bind("click", "node", function () {
+    //   x += 0.5;
+    //   cy.elements().layout({ name: "dagre", spacingFactor: x }).run();
+    // });
+  }
+
   startCanvas() {
     let e1 = this.buildStation(350, 40);
     let e2 = this.buildStation(400, 200);
@@ -116,7 +560,7 @@ class App extends React.Component {
     let e13Text = this.buildText("E13", 680, 485);
     let e14Text = this.buildText("E14", 760, 450);
 
-    let canvas = new fabric.Canvas("subwayCanvas", {
+    let canvas = new fabric.Canvas("subway-canvas", {
       height: 900,
       width: 900,
       backgroundColor: "#F4FAFF",
@@ -161,20 +605,20 @@ class App extends React.Component {
       .sendToBack(redLine)
       .sendToBack(greenLine);
 
-    e1.on("selected", () => this.changeSelectedStation("E1"));
-    e2.on("selected", () => this.changeSelectedStation("E2"));
-    e3.on("selected", () => this.changeSelectedStation("E3"));
-    e4.on("selected", () => this.changeSelectedStation("E4"));
-    e5.on("selected", () => this.changeSelectedStation("E5"));
-    e6.on("selected", () => this.changeSelectedStation("E6"));
-    e7.on("selected", () => this.changeSelectedStation("E7"));
-    e8.on("selected", () => this.changeSelectedStation("E8"));
-    e9.on("selected", () => this.changeSelectedStation("E9"));
-    e10.on("selected", () => this.changeSelectedStation("E10"));
-    e11.on("selected", () => this.changeSelectedStation("E11"));
-    e12.on("selected", () => this.changeSelectedStation("E12"));
-    e13.on("selected", () => this.changeSelectedStation("E13"));
-    e14.on("selected", () => this.changeSelectedStation("E14"));
+    e1.on("selected", () => this.changeSelectedStation(0));
+    e2.on("selected", () => this.changeSelectedStation(1));
+    e3.on("selected", () => this.changeSelectedStation(2));
+    e4.on("selected", () => this.changeSelectedStation(3));
+    e5.on("selected", () => this.changeSelectedStation(4));
+    e6.on("selected", () => this.changeSelectedStation(5));
+    e7.on("selected", () => this.changeSelectedStation(6));
+    e8.on("selected", () => this.changeSelectedStation(7));
+    e9.on("selected", () => this.changeSelectedStation(8));
+    e10.on("selected", () => this.changeSelectedStation(9));
+    e11.on("selected", () => this.changeSelectedStation(10));
+    e12.on("selected", () => this.changeSelectedStation(11));
+    e13.on("selected", () => this.changeSelectedStation(12));
+    e14.on("selected", () => this.changeSelectedStation(13));
   }
 
   render() {
@@ -184,31 +628,144 @@ class App extends React.Component {
           <h1>A* no Metrô de Paris</h1>
         </header>
         <main>
+          <div className="side-canvas">
+            <canvas id="subway-canvas"></canvas>
+            <div className="distance-table">
+              <h2>Tabela de distâncias diretas (em Km)</h2>
+              <table>
+                <tbody>
+                  <tr>
+                    <td></td>
+                    <th scope="col">E1</th>
+                    <th scope="col">E2</th>
+                    <th scope="col">E3</th>
+                    <th scope="col">E4</th>
+                    <th scope="col">E5</th>
+                    <th scope="col">E6</th>
+                    <th scope="col">E7</th>
+                    <th scope="col">E8</th>
+                    <th scope="col">E9</th>
+                    <th scope="col">E10</th>
+                    <th scope="col">E11</th>
+                    <th scope="col">E12</th>
+                    <th scope="col">E13</th>
+                    <th scope="col">E14</th>
+                  </tr>
+                  {this.state.directDistances.map(
+                    (directDistanceArray, index) => (
+                      <tr key={"E" + (index + 1)}>
+                        <th scope="row">{"E" + (index + 1)}</th>
+                        {directDistanceArray.map((distance, index) => (
+                          <td key={index}>{distance}</td>
+                        ))}
+                      </tr>
+                    )
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <div className="distance-table">
+              <h2>Tabela de distâncias reais (em Km)</h2>
+              <table>
+                <tr>
+                  <td></td>
+                  <th scope="col">E1</th>
+                  <th scope="col">E2</th>
+                  <th scope="col">E3</th>
+                  <th scope="col">E4</th>
+                  <th scope="col">E5</th>
+                  <th scope="col">E6</th>
+                  <th scope="col">E7</th>
+                  <th scope="col">E8</th>
+                  <th scope="col">E9</th>
+                  <th scope="col">E10</th>
+                  <th scope="col">E11</th>
+                  <th scope="col">E12</th>
+                  <th scope="col">E13</th>
+                  <th scope="col">E14</th>
+                </tr>
+                {this.state.realDistances.map((realDistanceArray, index) => (
+                  <tr key={"E" + (index + 1)}>
+                    <th scope="row">{"E" + (index + 1)}</th>
+                    {realDistanceArray.map((distance, index) => (
+                      <td key={index}>{distance}</td>
+                    ))}
+                  </tr>
+                ))}
+              </table>
+            </div>
+          </div>
           <div className="side-control">
             <div className="stations-selected">
-              <h2>Selecione no mapa ao lado a estação que você se encontra</h2>
-              {this.state.startStation ? (
-                <span>{this.state.startStation}</span>
-              ) : (
-                <span className="no-station-text">Sem estação definida</span>
-              )}
+              <h2>
+                Selecione no mapa ao lado a estação e a linha que você se
+                encontra
+              </h2>
+              <div>
+                {this.state.startStation !== null ? (
+                  <span>E{this.state.startStation + 1}</span>
+                ) : (
+                  <span className="no-station-text">Sem estação definida</span>
+                )}
+                {this.state.startStation !== null && (
+                  <select name="startLine">
+                    {this.state.stationsLines[this.state.startStation].map(
+                      (line, index) => (
+                        <option key={index} value={line}>
+                          {line === "red"
+                            ? "Vermelha"
+                            : line === "green"
+                            ? "Verde"
+                            : line === "blue"
+                            ? "Azul"
+                            : line === "yellow"
+                            ? "Amarela"
+                            : ""}
+                        </option>
+                      )
+                    )}
+                  </select>
+                )}
+              </div>
             </div>
             <div className="stations-selected">
-              <h2>Agora, selecione a estação que você deseja ir</h2>
-              {this.state.endStation ? (
-                <span>{this.state.endStation}</span>
-              ) : (
-                <span className="no-station-text">Sem estação definida</span>
-              )}
+              <h2>Agora, selecione a estação e a linha que você deseja ir</h2>
+              <div>
+                {this.state.endStation !== null ? (
+                  <span>E{this.state.endStation + 1}</span>
+                ) : (
+                  <span className="no-station-text">Sem estação definida</span>
+                )}
+                {this.state.endStation !== null && (
+                  <select name="endLine">
+                    {this.state.stationsLines[this.state.endStation].map(
+                      (line, index) => (
+                        <option key={index} value={line}>
+                          {line === "red"
+                            ? "Vermelha"
+                            : line === "green"
+                            ? "Verde"
+                            : line === "blue"
+                            ? "Azul"
+                            : line === "yellow"
+                            ? "Amarela"
+                            : ""}
+                        </option>
+                      )
+                    )}
+                  </select>
+                )}
+              </div>
             </div>
             <button
               className="find-way-button"
               disabled={this.state.readyToFindWay === false}
+              onClick={() => this.findBetterWay()}
             >
               Encontrar melhor caminho!
             </button>
+            <div id="better-way-graph"></div>
           </div>
-          <canvas id="subwayCanvas"></canvas>
         </main>
       </div>
     );
