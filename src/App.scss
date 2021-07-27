@@ -16,6 +16,11 @@
     grid-template-columns: 1fr 1fr;
     .side-canvas {
       margin: 0px 30px 0px 60px;
+      .command-message {
+        height: 75px;
+        font-size: 20px;
+        text-align: center;
+      }
       .distance-table {
         > table {
           width: 100%;

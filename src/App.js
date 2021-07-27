@@ -9,8 +9,11 @@ class App extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
+      canvas: null,
+      stationsCanvasVar: [],
       selectingStartOrEnd: 0,
       readyToFindWay: false,
+      commandMessage: "",
       startStation: null,
       startLine: null,
       endStation: null,
@@ -366,10 +369,15 @@ class App extends React.Component {
 
   changeSelectedStation(station) {
     if (this.state.selectingStartOrEnd === 0) {
-      this.setState({ startStation: station, selectingStartOrEnd: 1 });
+      this.setState({
+        startStation: station,
+        startLine: this.state.stationsLines[station][0],
+        selectingStartOrEnd: 1,
+      });
     } else {
       this.setState({
         endStation: station,
+        endLine: this.state.stationsLines[station][0],
         selectingStartOrEnd: 0,
         readyToFindWay: true,
       });
@@ -377,42 +385,62 @@ class App extends React.Component {
   }
 
   findBetterWay() {
-    let cy = this.buildGraph(this.state.startStation);
-    this.aStar(null, this.state.startStation, cy, 0);
+    let cy = this.buildGraph();
+    this.aStar(null, this.state.startStation, this.state.startLine, cy, 0);
+    this.state.stationsCanvasVar[this.state.startStation].set("fill", "red");
+    this.state.canvas.renderAll();
   }
 
   addNodesToGraph(
     heuristicDistances,
     previousStation,
     currentStation,
+    currentLine,
     currentRow,
     cy
   ) {
     heuristicDistances.forEach((heuristicDistance, index) => {
       if (index !== previousStation && heuristicDistance !== null) {
-        cy.add([
-          {
-            group: "nodes",
-            data: {
-              id: "E" + (index + 1) + "row" + (currentRow + 1),
-              station: "E" + (index + 1),
+        for (let i = 0; i < this.state.stationsLines[index].length; i++) {
+          cy.add([
+            {
+              group: "nodes",
+              data: {
+                id:
+                  "E" +
+                  (index + 1) +
+                  this.state.stationsLines[index][i] +
+                  "row" +
+                  (currentRow + 1),
+                station:
+                  "E" + (index + 1) + " " + this.state.stationsLines[index][i],
+              },
             },
-          },
-          {
-            group: "edges",
-            data: {
-              id:
-                "E" +
-                (currentStation + 1) +
-                "e" +
-                index +
-                "row" +
-                (currentRow + 1),
-              source: "E" + (currentStation + 1) + "row" + currentRow,
-              target: "E" + (index + 1) + "row" + (currentRow + 1),
+            {
+              group: "edges",
+              data: {
+                id:
+                  "E" +
+                  (currentStation + 1) +
+                  "E" +
+                  (index + 1) +
+                  this.state.stationsLines[index][i] +
+                  "row" +
+                  (currentRow + 1),
+                source:
+                  "E" + (currentStation + 1) + currentLine + "row" + currentRow,
+                target:
+                  "E" +
+                  (index + 1) +
+                  this.state.stationsLines[index][i] +
+                  "row" +
+                  (currentRow + 1),
+                station:
+                  "E" + (index + 1) + " " + this.state.stationsLines[index][i],
+              },
             },
-          },
-        ]);
+          ]);
+        }
       }
     });
     cy.elements().layout({ name: "dagre" }).run();
@@ -424,51 +452,132 @@ class App extends React.Component {
     cy.center();
   }
 
-  aStar(previousStation, currentStation, cy, currentRow) {
+  calcHeuristic(
+    newStationIndex,
+    newStationLine,
+    currentStationIndex,
+    currentStationLine
+  ) {
+    let timeToTravelHeuristic =
+      this.state.realDistances[newStationIndex][currentStationIndex] +
+      this.state.directDistances[newStationIndex][this.state.endStation];
+
+    if (currentStationLine !== newStationLine) {
+      timeToTravelHeuristic += 4;
+    }
+
+    console.log(
+      this.state.stationsLines[this.state.endStation].filter(
+        (n) => n !== newStationLine
+      ).length
+    );
+    timeToTravelHeuristic +=
+      this.state.stationsLines[this.state.endStation].filter(
+        (n) => n !== newStationLine
+      ).length * 4;
+
+    // const filteredArray = this.state.stationsLines[currentStationIndex].filter(
+    //   (value) => this.state.stationsLines[newStationIndex].includes(value)
+    // );
+
+    // let tempStation = filteredArray[0];
+
+    // if (newStationLine !== tempStation) {
+    //   timeToTravelHeuristic += 4;
+    // }
+
+    return timeToTravelHeuristic;
+  }
+
+  aStar(previousStation, currentStation, currentLine, cy, currentRow) {
+    console.log(previousStation, currentStation, currentLine, cy, currentRow);
+
     let heuristicDistances = [];
     this.state.realDistances[currentStation].forEach((realDis, index) => {
       if (realDis === null || realDis === 0) {
         heuristicDistances.push(null);
       } else {
-        heuristicDistances.push(
-          this.state.realDistances[index][currentStation] +
-            this.state.directDistances[index][this.state.endStation]
-        );
+        heuristicDistances.push([]);
+        this.state.stationsLines[index].forEach((line) => {
+          heuristicDistances[heuristicDistances.length - 1].push(
+            this.calcHeuristic(index, line, currentStation, currentLine)
+          );
+        });
       }
     });
+
+    console.log(heuristicDistances);
 
     this.addNodesToGraph(
       heuristicDistances,
       previousStation,
       currentStation,
+      currentLine,
       currentRow,
       cy
     );
 
     let auxHeuristicDistances = [...heuristicDistances];
     let indexMinStation = null;
-    while (!indexMinStation) {
-      let auxMinValue = Math.min(
-        ...auxHeuristicDistances.filter((element) => element !== null)
-      );
-      let auxIndexMinStation = auxHeuristicDistances.indexOf(auxMinValue);
-      if (
-        auxIndexMinStation === this.state.endStation ||
-        this.state.realDistances[auxIndexMinStation].filter(
-          (element) => element !== null
-        ).length > 2
-      ) {
-        indexMinStation = auxIndexMinStation;
-      } else {
-        auxHeuristicDistances.splice(auxIndexMinStation, 1);
+    let indexLineMinStation = null;
+    let valueMinStation = null;
+    for (let i = 0; i < auxHeuristicDistances.length; i++) {
+      if (auxHeuristicDistances[i] !== null) {
+        if (this.state.endStation === i) {
+          console.log("aqui", i);
+          indexMinStation = i;
+          break;
+        } else {
+          let minDistance = Math.min(...auxHeuristicDistances[i]);
+          let indexMinLine;
+          if (
+            auxHeuristicDistances[i].every(
+              (distance) => distance === auxHeuristicDistances[i][0]
+            )
+          ) {
+            console.log("oi");
+            indexMinLine =
+              this.state.stationsLines[i].indexOf(currentLine) !== -1
+                ? this.state.stationsLines[i].indexOf(currentLine)
+                : 0;
+          } else {
+            indexMinLine = auxHeuristicDistances[i].indexOf(minDistance);
+          }
+          if (
+            (minDistance < valueMinStation || valueMinStation === null) &&
+            this.state.realDistances[i].filter((element) => element !== null)
+              .length > 2
+          ) {
+            valueMinStation = minDistance;
+            indexMinStation = i;
+            indexLineMinStation = indexMinLine;
+          }
+        }
       }
     }
-    if (indexMinStation !== this.state.endStation) {
-      this.aStar(currentStation, indexMinStation, cy, currentRow + 1);
-    }
+
+    console.log(indexMinStation, indexLineMinStation);
+    this.setState({
+      commandMessage: `Vá para a estação E${indexMinStation + 1}`,
+    });
+
+    this.state.stationsCanvasVar[indexMinStation].set("fill", "red");
+    this.state.canvas.renderAll();
+
+    setTimeout(() => {
+      if (indexMinStation !== this.state.endStation) {
+        this.aStar(
+          currentStation,
+          indexMinStation,
+          this.state.stationsLines[indexMinStation][indexLineMinStation],
+          cy,
+          currentRow + 1
+        );
+      }
+    }, 3000);
   }
 
-  buildGraph(startStation) {
+  buildGraph() {
     let element = document.getElementById("better-way-graph");
     let cy = cytoscape({
       zoomingEnabled: false,
@@ -500,8 +609,14 @@ class App extends React.Component {
       {
         group: "nodes",
         data: {
-          id: "E" + (startStation + 1) + "row" + 0,
-          station: "E" + (startStation + 1),
+          id:
+            "E" +
+            (this.state.startStation + 1) +
+            this.state.startLine +
+            "row" +
+            0,
+          station:
+            "E" + (this.state.startStation + 1) + " " + this.state.startLine,
         },
       },
     ]);
@@ -619,6 +734,26 @@ class App extends React.Component {
     e12.on("selected", () => this.changeSelectedStation(11));
     e13.on("selected", () => this.changeSelectedStation(12));
     e14.on("selected", () => this.changeSelectedStation(13));
+
+    this.setState({
+      canvas: canvas,
+      stationsCanvasVar: [
+        e1,
+        e2,
+        e3,
+        e4,
+        e5,
+        e6,
+        e7,
+        e8,
+        e9,
+        e10,
+        e11,
+        e12,
+        e13,
+        e14,
+      ],
+    });
   }
 
   render() {
@@ -629,6 +764,7 @@ class App extends React.Component {
         </header>
         <main>
           <div className="side-canvas">
+            <div className="command-message">{this.state.commandMessage}</div>
             <canvas id="subway-canvas"></canvas>
             <div className="distance-table">
               <h2>Tabela de distâncias diretas (em Km)</h2>
@@ -667,31 +803,33 @@ class App extends React.Component {
             <div className="distance-table">
               <h2>Tabela de distâncias reais (em Km)</h2>
               <table>
-                <tr>
-                  <td></td>
-                  <th scope="col">E1</th>
-                  <th scope="col">E2</th>
-                  <th scope="col">E3</th>
-                  <th scope="col">E4</th>
-                  <th scope="col">E5</th>
-                  <th scope="col">E6</th>
-                  <th scope="col">E7</th>
-                  <th scope="col">E8</th>
-                  <th scope="col">E9</th>
-                  <th scope="col">E10</th>
-                  <th scope="col">E11</th>
-                  <th scope="col">E12</th>
-                  <th scope="col">E13</th>
-                  <th scope="col">E14</th>
-                </tr>
-                {this.state.realDistances.map((realDistanceArray, index) => (
-                  <tr key={"E" + (index + 1)}>
-                    <th scope="row">{"E" + (index + 1)}</th>
-                    {realDistanceArray.map((distance, index) => (
-                      <td key={index}>{distance}</td>
-                    ))}
+                <tbody>
+                  <tr>
+                    <td></td>
+                    <th scope="col">E1</th>
+                    <th scope="col">E2</th>
+                    <th scope="col">E3</th>
+                    <th scope="col">E4</th>
+                    <th scope="col">E5</th>
+                    <th scope="col">E6</th>
+                    <th scope="col">E7</th>
+                    <th scope="col">E8</th>
+                    <th scope="col">E9</th>
+                    <th scope="col">E10</th>
+                    <th scope="col">E11</th>
+                    <th scope="col">E12</th>
+                    <th scope="col">E13</th>
+                    <th scope="col">E14</th>
                   </tr>
-                ))}
+                  {this.state.realDistances.map((realDistanceArray, index) => (
+                    <tr key={"E" + (index + 1)}>
+                      <th scope="row">{"E" + (index + 1)}</th>
+                      {realDistanceArray.map((distance, index) => (
+                        <td key={index}>{distance}</td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
               </table>
             </div>
           </div>
@@ -708,7 +846,13 @@ class App extends React.Component {
                   <span className="no-station-text">Sem estação definida</span>
                 )}
                 {this.state.startStation !== null && (
-                  <select name="startLine">
+                  <select
+                    name="startLine"
+                    onChange={(e) => {
+                      this.setState({ startLine: e.target.value });
+                    }}
+                    value={this.state.startLine}
+                  >
                     {this.state.stationsLines[this.state.startStation].map(
                       (line, index) => (
                         <option key={index} value={line}>
@@ -737,7 +881,12 @@ class App extends React.Component {
                   <span className="no-station-text">Sem estação definida</span>
                 )}
                 {this.state.endStation !== null && (
-                  <select name="endLine">
+                  <select
+                    name="endLine"
+                    onChange={(e) => {
+                      this.setState({ endLine: e.target.value });
+                    }}
+                  >
                     {this.state.stationsLines[this.state.endStation].map(
                       (line, index) => (
                         <option key={index} value={line}>
