@@ -391,12 +391,15 @@ class App extends React.Component {
     this.setState({ finishRoute: false });
     let cy = this.buildGraph();
     this.setState({ graph: cy });
+    //Starta o algoritmo começando pela estação inicial e a linha inicial
+    //Pinta a primeira estação de vermelho no canvas
     this.aStar(null, this.state.startStation, this.state.startLine, cy, 0);
     this.state.stationsCanvasVar[this.state.startStation].set("fill", "red");
     this.state.canvas.renderAll();
   }
 
   resetCanvas() {
+    //Reseta o estado do canvas
     for (let i = 0; i < this.state.stationsCanvasVar.length; i++) {
       this.state.stationsCanvasVar[i].set("fill", "white");
     }
@@ -418,6 +421,7 @@ class App extends React.Component {
     currentRow,
     cy
   ) {
+    //Adiciona os nós filhos de um nó pai e as respectivas conexões
     heuristicDistances.forEach((heuristicDistance, index) => {
       if (index !== previousStation && heuristicDistance !== null) {
         for (let i = 0; i < this.state.stationsLines[index].length; i++) {
@@ -477,33 +481,34 @@ class App extends React.Component {
     currentStationIndex,
     currentStationLine
   ) {
+    /*
+      Primeiro calcula a heurística considerando apenas o tempo para um trem de 30km/h percorrer a distância
+      real e a direta entre as estações
+    */
     let timeToTravelHeuristic =
-      this.state.realDistances[newStationIndex][currentStationIndex] +
-      this.state.directDistances[newStationIndex][this.state.endStation];
+      (this.state.realDistances[newStationIndex][currentStationIndex] +
+        this.state.directDistances[newStationIndex][this.state.endStation]) *
+      2;
 
+    // Depois, considera se na heurística de distância real há a troca de linha de estação
     if (currentStationLine !== newStationLine) {
       timeToTravelHeuristic += 4;
     }
 
+    /* 
+      Por fim, considera estatísticamente, para a heurística de distância direta, quantas possibilidades
+      no pior caso podem ocorrer de troca de linhas de estação
+    */
     timeToTravelHeuristic +=
       this.state.stationsLines[this.state.endStation].filter(
         (n) => n !== newStationLine
       ).length * 4;
 
-    // const filteredArray = this.state.stationsLines[currentStationIndex].filter(
-    //   (value) => this.state.stationsLines[newStationIndex].includes(value)
-    // );
-
-    // let tempStation = filteredArray[0];
-
-    // if (newStationLine !== tempStation) {
-    //   timeToTravelHeuristic += 4;
-    // }
-
     return timeToTravelHeuristic;
   }
 
   aStar(previousStation, currentStation, currentLine, cy, currentRow) {
+    // Primeiro, contrói o array de heurísticas considerando as estações em suas respectivas linhas
     let heuristicDistances = [];
     this.state.realDistances[currentStation].forEach((realDis, index) => {
       if (realDis === null || realDis === 0) {
@@ -517,6 +522,8 @@ class App extends React.Component {
         });
       }
     });
+
+    // Adiciona os nós no grafo figurativo
     this.addNodesToGraph(
       heuristicDistances,
       previousStation,
@@ -526,6 +533,7 @@ class App extends React.Component {
       cy
     );
 
+    // Calcula o mínimo para o próximo passo do A*
     let auxHeuristicDistances = [...heuristicDistances];
     let indexMinStation = null;
     let indexLineMinStation = null;
@@ -563,14 +571,15 @@ class App extends React.Component {
       }
     }
 
+    //Atualiza a mensagem de direacionamento e o canvas
     this.setState({
       commandMessage: `Vá para a estação E${indexMinStation + 1} `,
     });
-
     this.state.stationsCanvasVar[indexMinStation].set("fill", "red");
     this.state.canvas.renderAll();
 
     setTimeout(() => {
+      // Caso não seja a estação final, faz o próximo passo do A*
       if (indexMinStation !== this.state.endStation) {
         this.aStar(
           currentStation,
@@ -580,6 +589,7 @@ class App extends React.Component {
           currentRow + 1
         );
       } else {
+        // Caso seja a estação final, finaliza o percurso
         this.setState({
           finishRoute: true,
         });
