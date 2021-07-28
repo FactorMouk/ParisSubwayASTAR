@@ -542,6 +542,9 @@ class App extends React.Component {
       if (auxHeuristicDistances[i] !== null) {
         if (this.state.endStation === i) {
           indexMinStation = i;
+          indexLineMinStation = this.state.stationsLines[i].indexOf(
+            this.state.endLine
+          );
           break;
         } else {
           let minDistance = Math.min(...auxHeuristicDistances[i]);
@@ -576,6 +579,11 @@ class App extends React.Component {
       commandMessage: `Vá para a estação E${indexMinStation + 1} `,
     });
     this.state.stationsCanvasVar[indexMinStation].set("fill", "red");
+    cy.nodes(
+      `[id = "E${indexMinStation + 1}${
+        this.state.stationsLines[indexMinStation][indexLineMinStation]
+      }row${currentRow + 1}"]`
+    ).style("background-color", "red");
     this.state.canvas.renderAll();
 
     setTimeout(() => {
@@ -640,6 +648,9 @@ class App extends React.Component {
         },
       },
     ]);
+    cy.nodes(
+      `[id = "E${this.state.startStation + 1}${this.state.startLine}row0"]`
+    ).style("background-color", "red");
     cy.resize();
     cy.fit();
     return cy;
